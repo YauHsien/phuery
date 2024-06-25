@@ -29,31 +29,37 @@ class Query {
         return $this;
     }
 
-    function from(string $table_name): Table
+    function from(string $table_name): Query
     {
-        return Table::new($table_name, $this);
+        $this->_from_table = Table::new($table_name, $this);
+        return $this;
     }
 
     function where(string $clause, Table $table=NULL, Join $join=NULL) : Query
     {
         $this->_where_clauses[] = $clause;
-        $this->_from_table = $table;
-        $this->_from_join = $join;
+        if ($table)
+            $this->_from_table = $table;
+        if ($join)
+            $this->_from_join = $join;
         return $this;
     }
 
     function getSQL() : string
     {
-        $terms = [
-            'SELECT',
-            implode(', ', $this->_selected_fields),
-            'FROM'
-            ($this->_from_table)
-                ? $this->_from_table->getSQL()
-                : $this->_from_join->getSQL(),
-            'WHERE',
-            implode(' and ', $this->_where_clauses)
-        ];
+        $terms = array_merge([
+                'SELECT',
+                implode(', ', $this->_selected_fields),
+                'FROM',
+                ($this->_from_table)
+                    ? $this->_from_table->getSQL()
+                    : $this->_from_join->getSQL()
+            ], 
+            ($this->_where_clauses)
+                ? ['WHERE',
+                   implode(' and ', $this->_where_clauses)]
+                : []
+        );
         return implode(' ', $terms);
     }
 
